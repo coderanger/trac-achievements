@@ -14,13 +14,14 @@ class AchievementCounter(object):
         
         db = db or self.env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute('SELECT value FROM achievements_counters WHERE username=%s AND counter=%s', (self.username, self.name))
+        cursor.execute('SELECT value, notify FROM achievements_counters WHERE username=%s AND counter=%s', (self.username, self.name))
         row = cursor.fetchone()
         if row:
             self.value = int(row[0])
         else:
             self.value = 0
-    
+            self.notify = 0
+
     def save(self, db=None):
         @with_transaction(self.env, db)
         def txn(db):
@@ -28,7 +29,6 @@ class AchievementCounter(object):
             cursor.execute('UPDATE achievements_counters SET value=%s WHERE username=%s AND counter=%s', (self.value, self.username, self.name))
             if not cursor.rowcount:
                 cursor.execute('INSERT INTO achievements_counters (value, username, counter) VALUES (%s, %s, %s)', (self.value, self.username, self.name))
-
 
     @classmethod
     def update(cls, env, name, username, value):

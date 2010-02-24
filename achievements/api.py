@@ -3,16 +3,19 @@
 
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
+from trac.web.api import IRequestFilter
+from trac.web.chrome import add_notice
+from trac.db.util import with_transaction
 
 import db_default
 
 class AchievementsProvider(Interface):
     """An extension point interface for exposing achievements."""
 
-class AchieventmentsSystem(Component):
+class AchievementsSystem(Component):
     """Core achievements processing."""
 
-    implements(IEnvironmentSetupParticipant)
+    implements(IEnvironmentSetupParticipant, IRequestFilter)
     
     providers = ExtensionPoint(AchievementsProvider)
     
@@ -26,6 +29,41 @@ class AchieventmentsSystem(Component):
                 self.counters.setdefault(achievement['counter'], []).append(achievement)
         for achievements in self.counters.itervalues():
             achievements.sort(key=lambda a: a['value'])
+
+    # Public methods
+    def update(self, counter, username, value):
+        @with_transaction(self.env)
+        def txn(db):
+            cursor = db.cursor()
+            cursor.execute('UPDATE achievements_counters SET value=(SELECT value FROM achievements_counters WHERE username=%s AND counter=%s)+%s WHERE username=%s AND counter=%s',
+                           (username, counter, value, username, counter))
+            if not cursor.rowcount:
+                cursor.execute('INSERT INTO achievements_counters (username, counter, value, notify) VALUES (%s, %s, %s, %s)',
+                               (username, counter, value, self.counters[counter][0]['value']))
+
+    # IRequestFilter methods
+    def pre_process_request(self, req, handler):
+        return handler
+            
+    def post_process_request(self, req, template, data, content_type):
+        @with_transaction(self.env)
+        def txn(db):
+            if req.authname == 'anonymous':
+                return
+            cursor = db.cursor()
+            cursor.execute('SELECT counter, value, notify FROM achievements_counters WHERE username=%s AND value>=notify AND notify!=-1', (req.authname,))
+            for counter, value, notify in cursor.fetchall():
+                new_notify = -1
+                current_ach = None
+                for ach in self.counters[counter]:
+                    if current_ach:
+                        new_notify = ach['value']
+                        break
+                    if ach['value'] == notify:
+                        current_ach = ach
+                cursor.execute('UPDATE achievements_counters SET notify=%s WHERE username=%s AND counter=%s', (new_notify, req.authname, counter))
+                add_notice(req, current_ach['display'])
+        return template, data, content_type
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):

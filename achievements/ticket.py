@@ -5,8 +5,7 @@ from trac.core import *
 from trac.ticket.api import ITicketChangeListener
 from trac.util.translation import _
 
-from achievments.api import AchievementsProvider
-from achievements.model import AchievementCounter
+from api import AchievementsProvider, AchievementsSystem
 
 class TicketAchievementsProvider(Component):
     """An achievement provider for ticket-related achievements."""
@@ -18,7 +17,9 @@ class TicketAchievementsProvider(Component):
         pass
 
     def ticket_changed(self, tkt, comment, author, old_values):
-        AchievementCounter.update(self.env, 'ticket.comments', author, 1)
+        if author != 'anonymous':
+            self.log.debug('TicketAchievementsProvider: Adding 1 to %s', author)
+            AchievementsSystem(self.env).update('ticket.comments', author, 1)
 
     def ticket_deleted(self, tkt):
         pass
@@ -30,5 +31,11 @@ class TicketAchievementsProvider(Component):
             'display': _('Comment on a ticket'),
             'counter': 'ticket.comments',
             'value': 1,
+        }
+        yield {
+            'name': 'ticket.comments_r2',
+            'display': _('Comment on a ticket twice'),
+            'counter': 'ticket.comments',
+            'value': 2,
         }
 
