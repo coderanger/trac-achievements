@@ -4,13 +4,11 @@
 from trac.db import Table, Column
 
 name = 'achievements'
-version = 1
+version = 2
 tables = [
-    Table('achievements_users', key=('username', 'achievement'))[
+    Table('achievements', key=('username', 'achievement'))[
         Column('username'),
         Column('achievement'),
-        Column('complete'),
-        Column('displayed'),
     ],
     Table('achievements_counters', key=('username', 'counter'))[
         Column('username'),

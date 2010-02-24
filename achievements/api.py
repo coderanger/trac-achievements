@@ -1,11 +1,13 @@
 # Created by Noah Kantrowitz on 2010-02-23.
 # Copyright (c) 2010 Noah Kantrowitz. All rights reserved.
+from copy import copy
 
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_notice
+from trac.web.chrome import add_script, add_script_data, ITemplateProvider
 from trac.db.util import with_transaction
+from pkg_resources import resource_filename
 
 import db_default
 
@@ -15,7 +17,7 @@ class AchievementsProvider(Interface):
 class AchievementsSystem(Component):
     """Core achievements processing."""
 
-    implements(IEnvironmentSetupParticipant, IRequestFilter)
+    implements(IEnvironmentSetupParticipant, IRequestFilter, ITemplateProvider)
     
     providers = ExtensionPoint(AchievementsProvider)
     
@@ -46,6 +48,7 @@ class AchievementsSystem(Component):
         return handler
             
     def post_process_request(self, req, template, data, content_type):
+        achieved = []
         @with_transaction(self.env)
         def txn(db):
             if req.authname == 'anonymous':
@@ -60,10 +63,22 @@ class AchievementsSystem(Component):
                         new_notify = ach['value']
                         break
                     if ach['value'] == notify:
-                        current_ach = ach
+                        current_ach = copy(ach)
+                        del current_ach['provider']
                 cursor.execute('UPDATE achievements_counters SET notify=%s WHERE username=%s AND counter=%s', (new_notify, req.authname, counter))
-                add_notice(req, current_ach['display'])
+                cursor.execute('INSERT INTO achievements (username, achievement) VALUES (%s, %s)', (req.authname, current_ach['name']))
+                achieved.append(current_ach)
+        add_script_data(req, {'achievements': achieved})
+        add_script(req, 'achievements/achievements.js')
         return template, data, content_type
+
+    # ITemplateProvider methods
+    def get_htdocs_dirs(self):
+        yield 'achievements', resource_filename(__name__, 'htdocs')
+            
+    def get_templates_dirs(self):
+        #yield resource_filename(__name__, 'templates')
+        return []
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
