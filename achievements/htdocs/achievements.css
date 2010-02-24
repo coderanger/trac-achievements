@@ -1,0 +1,9 @@
+.achievement {
+  width: 200px;
+  height: 100px;
+  position: fixed;
+  bottom: 5px;
+  right: 5px;
+  background-color: #DFED61;
+  border: 1px solid #999;
+}

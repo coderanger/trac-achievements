@@ -5,7 +5,7 @@ from copy import copy
 from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_script, add_script_data, ITemplateProvider
+from trac.web.chrome import add_script, add_script_data, ITemplateProvider, add_stylesheet
 from trac.db.util import with_transaction
 from pkg_resources import resource_filename
 
@@ -70,6 +70,7 @@ class AchievementsSystem(Component):
                 achieved.append(current_ach)
         add_script_data(req, {'achievements': achieved})
         add_script(req, 'achievements/achievements.js')
+        add_stylesheet(req, 'achievements/achievements.css')
         return template, data, content_type
 
     # ITemplateProvider methods
