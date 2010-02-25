@@ -78,8 +78,7 @@ class AchievementsSystem(Component):
         yield 'achievements', resource_filename(__name__, 'htdocs')
             
     def get_templates_dirs(self):
-        #yield resource_filename(__name__, 'templates')
-        return []
+        yield resource_filename(__name__, 'templates')
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
