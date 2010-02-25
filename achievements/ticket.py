@@ -44,17 +44,20 @@ class TicketAchievementsProvider(Component):
             'display': _('Comment on 5 tickets'),
             'counter': 'ticket.comments',
             'value': 5,
+            'requires': ['ticket.comments.r1'],
         }
         yield {
             'name': 'ticket.comments.r3',
             'display': _('Comment on 10 tickets'),
             'counter': 'ticket.comments',
             'value': 10,
+            'requires': ['ticket.comments.r2'],
         }
         yield {
             'name': 'ticket.created.r1',
             'display': _('Create a ticket'),
             'counter': 'ticket.created',
             'value': 1,
+            'requires': ['ticket.comments.r1'],
         }
 
