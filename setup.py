@@ -38,6 +38,7 @@ setup(
 
     entry_points = {
         'trac.plugins': [
+            'achievements.web_ui = achievements.web_ui',
             'achievements.api = achievements.api',
             'achievements.ticket = achievements.ticket',
         ],

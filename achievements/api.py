@@ -42,6 +42,48 @@ class AchievementsSystem(Component):
             if not cursor.rowcount:
                 cursor.execute('INSERT INTO achievements_counters (username, counter, value, notify) VALUES (%s, %s, %s, %s)',
                                (username, counter, value, self.counters[counter][0]['value']))
+    
+    def get_user_achievements(self, username, db=None):
+        achievements = {}
+        db = db or self.env.get_db_cnx()
+        cursor = db.cursor()
+        cursor.execute('SELECT achievement FROM achievements WHERE username=%s', (username,))
+        for row in cursor:
+            ach = self.achievements.get(row[0])
+            if ach:
+                ach = copy(ach)
+                ach['complete'] = True
+                achievements[ach['name']] = ach
+        
+        # Add in anything that has all requirements met, including those
+        # with no requirements
+        dirty = True
+        while dirty:
+            dirty = False
+            for ach in self.achievements.itervalues():
+                for requirement in ach.get('requires', ()):
+                    if requirement not in achievements or not achievements[requirement]['complete']:
+                        break
+                else:
+                    # All requirements met, show
+                    if ach['name'] not in achievements:
+                        dirty = True
+                        ach = copy(ach)
+                        ach['complete'] = False
+                        achievements[ach['name']] = ach
+        dirty = True
+        while dirty:
+            dirty = False
+            for ach in achievements.itervalues():
+                for requirement in ach.get('requires', ()):
+                    if requirement not in achievements:
+                        ach = self.achievements.get(requirement)
+                        if ach and ach['name'] not in achievements:
+                            dirty = True
+                            ach = copy(ach)
+                            ach['complete'] = False
+                            achievements[ach['name']] = ach
+        return achievements
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -58,7 +100,7 @@ class AchievementsSystem(Component):
             for counter, value, notify in cursor.fetchall():
                 new_notify = -1
                 current_ach = None
-                for ach in self.counters[counter]:
+                for ach in self.counters.get(counter, ()):
                     if current_ach:
                         new_notify = ach['value']
                         break

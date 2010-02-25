@@ -1,0 +1,27 @@
+<!--!
+	achievements
+	Created by  on 2010-02-24.
+	Copyright (c) 2010 Noah Kantrowitz. All rights reserved.
+-->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+  <head>
+    <title>Achievements</title>
+  </head>
+  <body>
+    <h1>Achievements</h1>
+    <div py:for="ach in achievements.itervalues()">
+      <pre>${pprint(ach)}</pre>
+    </div>
+    <ul>
+      <li py:for="counter, value, notify in counters">
+        ${counter}: ${value} (${notify})
+      </li>
+    </ul>
+  </body>
+</html>
