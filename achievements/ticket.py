@@ -22,8 +22,8 @@ class TicketAchievementsProvider(Component):
             return
         if comment:
             AchievementsSystem(self.env).update('ticket.comments', author, 1)
-        if old_values[state] != tkt['state'] and tkt['state'] == 'fixed':
-            if tkt['resolution'] == 'fixed' tkt['reporter'] != 'anonymous':
+        if old_values.get('state') != tkt['state'] and tkt['state'] == 'closed':
+            if tkt['resolution'] == 'fixed' and tkt['reporter'] != 'anonymous':
                 AchievementsSystem(self.env).update('ticket.reported.closedfixed', tkt['reporter'], 1)
             AchievementsSystem(self.env).update('ticket.closed', author, 1)
                 
